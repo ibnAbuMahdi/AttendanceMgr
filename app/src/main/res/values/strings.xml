@@ -1,0 +1,43 @@
+<resources>
+    <string name="app_name">Atenda</string>
+    <string name="select_course">Select Course</string>
+    <string name="Scan_Finger">scan</string>
+    <string name="submit_record">Submit Record</string>
+    <string name="register_tutor">Register Tutor</string>
+    <string name="select_course_hint">Select your courses from the spinner</string>
+    <string name="scan_finger">Scan</string>
+    <string name="capture_id">Capture ID</string>
+    <string name="scan_fingerprint">Scan</string>
+    <string name="admission_number">Admission Number</string>
+    <string name="addCourses">Add</string>
+    <string name="newCourses">New</string>
+    <string name="dropCourses">Drop</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_username">Username</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="jobs_alert_suffix">outstanding job(s)</string>
+    <string name="earnings_week_to_date">Your week-to-date earnings:</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="deptsItemName">Departments</string>
+    <string name="coursesItemName">Courses</string>
+    <string name="facultiesItemName">Faculties</string>
+    <string name="date_heading">Date</string>
+    <string name="course_code_heading">Course code</string>
+    <string name="period_heading">Period</string>
+    <string name="count_heading">Count</string>
+    <string name="logout">Logout</string>
+    <string name="no_network">"No network connection"</string>
+    <string name="contact_us">Contact Us</string>
+    <string name="passcode_message">Please input your passcode</string>
+</resources>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/faculties">
+
+    <fragment
+        android:id="@+id/departments"
+        android:name="com.example.attendancemgr.ui.Departments.DepartmentsFragment"
+        android:label="@string/deptsItemName"
+        tools:layout="@layout/departments" >
+        <argument android:name="dept_data"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/courses"
+        android:name="com.example.attendancemgr.ui.Courses.CoursesFragment"
+        android:label="@string/coursesItemName"
+        tools:layout="@layout/courses" >
+        <argument android:name="course_data"
+            app:argType="string"/>
+    </fragment>
+
+    <fragment
+        android:id="@+id/faculties"
+        android:name="com.example.attendancemgr.ui.Faculties.FacultiesFragment"
+        android:label="@string/facultiesItemName"
+        tools:layout="@layout/faculties">
+        <argument android:name="facs_data"
+            app:argType="string"/>
+    </fragment>
+    <fragment
+        android:id="@+id/contactUs"
+        android:label="@string/contact_us"
+        android:name="com.example.attendancemgr.ui.Contact_Us.ContactUsFragment"
+        tools:layout="@layout/fragment_contact_us"
+        />
+
+</navigation>

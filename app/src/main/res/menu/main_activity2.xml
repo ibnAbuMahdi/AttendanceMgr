@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_register"
+        android:orderInCategory="90"
+        android:title="@string/register_tutor"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_submit"
+        android:title="@string/submit_record"
+        app:showAsAction="never"
+        android:orderInCategory="80"
+        />
+    <item
+        android:id="@+id/action_logout"
+        android:title="@string/logout"
+        app:showAsAction="never"
+        android:orderInCategory="100"
+        />
+</menu>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="2dp">
+    <View
+        android:id="@+id/divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider" />
+
+    <LinearLayout
+        android:id="@+id/id_compListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/deptName"
+            style="@style/jobsContentStyle"
+            android:text="01/01/1992"
+            />
+
+        <TextView
+            android:id="@+id/jobCourse"
+            style="@style/jobsContentStyle"
+            android:text="PHY101"
+            />
+
+        <TextView
+            android:id="@+id/jobPeriod"
+            style="@style/jobsContentStyle"
+            android:text="8 AM - 10 AM"
+            />
+
+        <TextView
+            android:id="@+id/jobCount"
+            style="@style/jobsContentStyle"
+            android:text="999"
+        />
+    </LinearLayout>
+
+</LinearLayout>
