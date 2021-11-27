@@ -84,6 +84,7 @@ public class CoursesFragment extends Fragment {
     String chosenCourse;
     RecyclerAdapter mAdapter;
     String mDep;
+    View view;
     RecyclerView mRecyclerView;
     ProgressBar pb;
     AgentCourse openedCourse;
@@ -186,6 +187,7 @@ public class CoursesFragment extends Fragment {
         View root = inflater.inflate(R.layout.courses, container, false);
          mRecyclerView = root.findViewById(R.id.coursesRecycler);
         SearchView searchView = root.findViewById(R.id.coursesSearchView);
+        view = root.findViewById(R.id.view);
          pb = root.findViewById(R.id.coursesProgressBar);
          pb.setVisibility(View.INVISIBLE);
         mDep = args.getString("dep");
@@ -459,7 +461,6 @@ public class CoursesFragment extends Fragment {
     }
     private void scanTutorFP() {
         Intent intent = new Intent(getActivity(), ScanTutor.class);
-        //todo
         intent.putExtra("passcode", getPassCode());
         tutorScanLauncher.launch(intent);
 
@@ -565,7 +566,7 @@ public class CoursesFragment extends Fragment {
         if (isWifiCxd()) {
             downloadFP.execute();
         } else {
-            Snackbar.make(getActivity(), mRecyclerView,  "No network connection", Snackbar.LENGTH_LONG);
+            Snackbar.make(getActivity(), view,"No network connection", Snackbar.LENGTH_LONG).show();
         }
     }
     private void storeAttendanceData(String data) throws JSONException {

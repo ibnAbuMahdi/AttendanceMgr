@@ -205,7 +205,25 @@ public class MainActivity2 extends AppCompatActivity {
               }
                 break;
             case "Logout":
-                onBackPressed();
+                if (!Submitted){
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity2.this);
+                    builder.setMessage("Submit record?");
+                    builder.setPositiveButton("Yes", (dialog, which) -> {
+                                if (isWifiCxd()){
+                                    submitRecord();
+                                    dialog.cancel();
+                                }
+                            }
+                    );
+
+                    builder.setNegativeButton("No", (dialog, which) -> dialog.cancel());
+
+                    AlertDialog dialog = builder.create();
+
+                    dialog.show();
+                } else {
+                    finish();
+                }
                 break;
         }
         return true;
