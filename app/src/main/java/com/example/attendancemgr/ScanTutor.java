@@ -1,9 +1,5 @@
 package com.example.attendancemgr;
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.activity.OnBackPressedDispatcher;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,6 +8,10 @@ import android.text.TextWatcher;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.OnBackPressedDispatcher;
+import androidx.appcompat.app.AppCompatActivity;
 
 import static com.example.attendancemgr.ui.Courses.CoursesFragment.TUTOR_OK;
 
@@ -67,7 +67,7 @@ int period;
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 if (charSequence.length()>0){
-                    period = Integer.parseInt((String) charSequence);
+                    period = Integer.parseInt(charSequence.toString());
                     Intent intent1 = new Intent();
                     intent1.putExtra("period", period);
                     setResult(TUTOR_OK, intent1);

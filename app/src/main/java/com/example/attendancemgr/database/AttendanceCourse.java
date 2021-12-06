@@ -34,11 +34,11 @@ public class AttendanceCourse {
     private byte[] FP;
 
     @ColumnInfo(name = "date")
-    private String Date;
+    private int Date;
 
     @ColumnInfo(name = "period")
     private int period;
-    public AttendanceCourse(@NonNull String course, String Adm_No, byte[] FP, Sub_Status sub_status, Cap_Status cap_status, String Date, int period){
+    public AttendanceCourse(@NonNull String course, String Adm_No, byte[] FP, Sub_Status sub_status, Cap_Status cap_status, int Date, int period){
         this.course = course;
         this.sub_status = sub_status;
         this.Adm_No = Adm_No;
@@ -49,7 +49,7 @@ public class AttendanceCourse {
     }
 
     @Ignore
-public AttendanceCourse(int id, @NonNull String course, String admNo, byte[] fp, Sub_Status status, Cap_Status cap_status, String Date, int period){
+public AttendanceCourse(int id, @NonNull String course, String admNo, byte[] fp, Sub_Status status, Cap_Status cap_status, int Date, int period){
     this.course = course;
     this.sub_status = status;
     this.Adm_No = admNo;
@@ -132,11 +132,11 @@ public AttendanceCourse(int id, @NonNull String course, String admNo, byte[] fp,
         this.course = course;
     }
 
-    public String getDate() {
+    public int getDate() {
         return Date;
     }
 
-    public void setDate(String date) {
+    public void setDate(int date) {
         Date = date;
     }
 }

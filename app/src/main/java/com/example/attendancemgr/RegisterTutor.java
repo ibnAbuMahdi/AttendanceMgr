@@ -1,13 +1,5 @@
 package com.example.attendancemgr;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.ViewModelProvider;
-
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -20,6 +12,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -27,6 +20,14 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.attendancemgr.database.AgentCourse;
 import com.example.attendancemgr.database.CourseViewModel;
@@ -50,6 +51,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringJoiner;
+
+import static com.example.attendancemgr.MainActivity2.NO_DATA;
+import static com.example.attendancemgr.ui.login.LoginActivity.ID_FILE;
+import static com.example.attendancemgr.ui.login.LoginActivity.USERNAME;
 
 public class RegisterTutor extends AppCompatActivity {
 androidx.appcompat.widget.AppCompatSpinner coursesSpinner, facultiesSpinner, deptsSpinner;
@@ -200,6 +206,7 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
         });
         coursesView.setOnLongClickListener(view -> {
             coursesView.setText("");
+            tutorCourses = new LinkedList<>();
             return true;
         });
         OTPText.addTextChangedListener(new TextWatcher() {
@@ -214,17 +221,16 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
 
 
                     if (charSequence.length() == 11) {
-                        authStage =
                         phoneNumber = charSequence.toString();
                         OTPText.setText("");
                         authStage = OTP;
                         scanButton.setText("get PIN");
-                        getOTP(chosenCourse, phoneNumber);
+                        getOTP(getUsername(), phoneNumber);
 
                     }
                 } else {
                     if(charSequence.length() == 6){
-                        if (trueOTP.contentEquals(charSequence.toString())){
+                        if (trueOTP != null && trueOTP.contentEquals(charSequence.toString())){
                             scanButton.setText("Scan");
                             scanTutor(scanButton);
                         }
@@ -237,7 +243,10 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
             }
         });
     }
-
+    private String getUsername(){
+        SharedPreferences preferences = this.getSharedPreferences(ID_FILE, MODE_PRIVATE);
+        return preferences.getString(USERNAME, NO_DATA);
+    }
     private void initMaps() {
         Set<String> facSet = new HashSet<>();
         Set<String> depSet = new HashSet<>();
@@ -308,7 +317,8 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
                 if (otp!=null) trueOTP = otp;
                 OTPText.setVisibility(View.VISIBLE);
                 OTPText.setHint("XXXXXX");
-                statusView.setText("Please input PIN code");
+                OTPText.setInputType(EditorInfo.TYPE_CLASS_TEXT|EditorInfo.TYPE_TEXT_VARIATION_PASSWORD);
+                statusView.setText("Please input passcode");
                 scanButton.setEnabled(true);
                 isVisible = false;
             }
@@ -316,7 +326,7 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
 
             @Override
             protected String doInBackground(String... strings) {
-                String login_url = "http://www.gstcbunza2012.org.ng/fas/otp_data.php";
+                String login_url = "http://www.gstcbunza2012.org.ng/fas/tutor_aut.php";
 
                 try {
                     java.net.URL url = new URL(login_url);
@@ -330,7 +340,7 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
 
                         OutputStream outputStream = httpURLConnection.getOutputStream();
                         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-                        String post_data = URLEncoder.encode("course", "UTF-8") + "=" + URLEncoder.encode(strings[0], "UTF-8") + "&" +
+                        String post_data = URLEncoder.encode("uname", "UTF-8") + "=" + URLEncoder.encode(strings[0], "UTF-8") + "&" +
                                 URLEncoder.encode("phone", "UTF-8") + "=" + URLEncoder.encode(strings[1], "UTF-8");
                         bufferedWriter.write(post_data);
                         bufferedWriter.flush();
@@ -366,19 +376,28 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
         getOTPAsynctask getOTPAsynctask = new getOTPAsynctask();
         getOTPAsynctask.execute(courses);
     }
+    public String removeSpace(String course){
+        String[] arr = course.split(" ");
+        StringJoiner joiner = new StringJoiner("_");
+        for (String sub : arr) {
+            joiner.add(sub);
+        }
+        return joiner.toString();
+    }
+
     private void storeCourseTutor(byte[] result, List<String> tutorCourses) {
 
         StringBuilder Courses = new StringBuilder();
         for (int i=0; i<tutorCourses.size(); i++) {
             if (i==0) {
-                Courses.append(tutorCourses.get(i));
+                Courses.append(removeSpace(tutorCourses.get(i)));
             } else {
-                Courses.append(",").append(tutorCourses.get(i));
+                Courses.append(",").append(removeSpace(tutorCourses.get(i)));
             }
         }
 
        // String data = "{\"Fingerprint\":\"" + Base64.encodeToString(result, Base64.DEFAULT) + "\", \"courses\":\"" + Courses.toString() + "\"}";
-        String[] data = {phoneNumber, Base64.encodeToString(result, Base64.DEFAULT), Courses.toString()};
+        String[] data = {phoneNumber, Base64.encodeToString(result, Base64.DEFAULT), Courses.toString(), getUsername()};
         class UploadFP extends AsyncTask<String, Void, Boolean> {
             @Override
             protected void onPreExecute() {
@@ -391,7 +410,7 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
             protected void onPostExecute(Boolean saved) {
                 super.onPostExecute(saved);
                 if (saved){
-                    Toast.makeText(RegisterTutor.this, "fine!", Toast.LENGTH_SHORT).show();
+
                     statusView.setTextColor(Color.GREEN);
                     statusView.setText("Data uploaded successfully!");
                     for (String course : tutorCourses) {
@@ -427,11 +446,12 @@ private ActivityResultLauncher<Intent> enrolTutorLauncher = registerForActivityR
                         httpURLConnection.connect();
 
                        JSONObject obj = new JSONObject();
-                       obj.put("phone", strings[0]);
-                       obj.put("Fingerprint", strings[1]);
-                       obj.put("courses", strings[2]);
+                       obj.put("phone", strings[0])
+                               .put("Fingerprint", strings[1])
+                               .put("courses", strings[2])
+                               .put("uname", strings[3]);
 
-                        OutputStream outputStream = httpURLConnection.getOutputStream();
+                       OutputStream outputStream = httpURLConnection.getOutputStream();
 
                         outputStream.write(obj.toString().getBytes(StandardCharsets.UTF_8));
 

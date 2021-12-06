@@ -2,7 +2,8 @@ package com.example.attendancemgr.ui.Faculties;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,17 +13,15 @@ import android.widget.Filterable;
 import android.widget.SearchView;
 import android.widget.TextView;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.activity.OnBackPressedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
-import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,11 +29,9 @@ import com.example.attendancemgr.R;
 import com.example.attendancemgr.data.model.DepartmentsModel;
 import com.example.attendancemgr.database.AgentCourse;
 import com.example.attendancemgr.database.CourseViewModel;
-import com.example.attendancemgr.ui.Departments.DepartmentsFragment;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -45,23 +42,45 @@ import static com.example.attendancemgr.MainActivity2.NO_DATA;
 
 public class FacultiesFragment extends Fragment {
 
-    private FacultiesViewModel facultiesViewModel;
     private CourseViewModel mCourseViewModel;
+    OnFragmentInteractionListener fragmentListener;
     LiveData<List<AgentCourse>> orgLiveData;
     RecyclerAdapter mAdapter;
     NavController controller;
     List<DepartmentsModel> itemsModelList = new ArrayList<>();
     Bundle args;
+    public interface OnFragmentInteractionListener{
+
+        void onBackPressed(boolean backPressed);
+
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentInteractionListener){
+            fragmentListener = (OnFragmentInteractionListener) context;
+        } else {
+            throw new ClassCastException(context.toString()
+                    + getResources().getString(R.string.exception_message));
+        }
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         args = getArguments();
 
-        facultiesViewModel =
-                new ViewModelProvider(this).get(FacultiesViewModel.class);
         mCourseViewModel =
                 new ViewModelProvider(this).get(CourseViewModel.class);
 
+        OnBackPressedDispatcher dispatcher = getActivity().getOnBackPressedDispatcher();
+        dispatcher.addCallback(new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                    fragmentListener.onBackPressed(true);
+            }
+        });
 
         NavHostFragment navHostFragment =(NavHostFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
         if (navHostFragment != null)  controller = navHostFragment.getNavController();
@@ -114,7 +133,13 @@ public class FacultiesFragment extends Fragment {
         });
         return root;
     }
+    public boolean isWifiCxd() {
+        ConnectivityManager connMgr = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        final NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
 
+        return networkInfo!=null && networkInfo.isConnected();
+
+    }
     class RecyclerAdapter extends RecyclerView.Adapter<FacultiesFragment.RecyclerAdapter.ItemsViewHolder> implements Filterable {
         private final List<DepartmentsModel> departmentsModelList;
         private LayoutInflater mInflater;

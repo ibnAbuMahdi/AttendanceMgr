@@ -62,6 +62,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -93,17 +94,16 @@ public class CoursesFragment extends Fragment {
     private List<AttendanceCourse> attendanceCourses;
     public static final int TUTOR_OK = 234;
     private final int ATT_OK = 432;
-    private LinkedList<Integer> IDs;
+    private LinkedList<Integer> IDs, un_enrolledIDs;
     private LinkedList<String> AdmNos;
 
     LiveData<List<AttendanceCourse>> attLiveData;
-    private LinkedList<byte[]> studentsFP, lecturersFP;
+    private LinkedList<byte[]> studentsFP, lecturersFP, un_enrolledFPs;
 
     Bundle args;
     ActivityResultCallback<ActivityResult> tutorScanCallback = result -> {
         if (result.getResultCode() == TUTOR_OK){
             if(result.getData().hasExtra("period")){
-
                 savePeriod(result.getData().getExtras().getInt("period"));
                 for (AgentCourse course : mAgentCourses) {
                     if (course.getCourse().equals(chosenCourse)) {
@@ -124,20 +124,21 @@ public class CoursesFragment extends Fragment {
         //Matcher mat;
         if(result.getResultCode() == ATT_OK){
             if(result.getData().hasExtra(ATT_STDs_NOs)) {
-            for (String data : result.getData().getExtras().getStringArrayList(ATT_STDs_NOs)) {
-                if (data.length() > 20) {
+                ArrayList<Object> objects =(ArrayList<Object>) result.getData().getExtras().get(ATT_STDs_NOs);
+            for (Object data : objects) {
+                if (data.getClass().isArray()) {
                     // ga wanda ya fara daukar attendance na farko kafin enrollment
                     mCourseViewModel.insert(new AttendanceCourse(chosenCourse,
-                            null,
-                            Base64.decode(data, Base64.DEFAULT),
+                            "null",
+                            (byte[]) data,
                             AttendanceCourse.Sub_Status.unsubmitted,
                             AttendanceCourse.Cap_Status.captured,
-                            new SimpleDateFormat("yyyyMMdd").format(new Date()), getPeriod()));
+                            Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(new Date())), getPeriod()));
                 } else {
                    /* pat = Pattern.compile(data);
                     mat = pat.matcher("&");
                     if (mat.find()) {*/
-                    String[] admNo_id = data.split("&");
+                    String[] admNo_id =((String) data).split("&");
                     // for the enrolled
 
                     mCourseViewModel.update(new AttendanceCourse(Integer.parseInt(admNo_id[0]),
@@ -146,7 +147,7 @@ public class CoursesFragment extends Fragment {
                             null,
                             AttendanceCourse.Sub_Status.unsubmitted,
                             AttendanceCourse.Cap_Status.captured,
-                            new SimpleDateFormat("yyyyMMdd").format(new Date()), getPeriod()));
+                            Integer.parseInt(new SimpleDateFormat("yyyyMMdd").format(new Date())), getPeriod()));
 
                     /*}else {
                                 mCourseViewModel.insert(new AttendanceCourse(chosenCourse, data, null, AttendanceCourse.Sub_Status.unsubmitted, AttendanceCourse.Cap_Status.captured));
@@ -176,6 +177,8 @@ public class CoursesFragment extends Fragment {
         orgLiveData = mCourseViewModel.getAllAgentCourses();
         attLiveData = mCourseViewModel.getAllAttendanceCourses();
 
+        un_enrolledFPs = new LinkedList<>();
+        un_enrolledIDs = new LinkedList<>();
         lecturersFP = new LinkedList<>();
         AdmNos = new LinkedList<>();
         studentsFP = new LinkedList<>();
@@ -282,7 +285,6 @@ public class CoursesFragment extends Fragment {
 
 
         }
-
         @Override
         public void onBindViewHolder(@NonNull CoursesFragment.RecyclerAdapter.ItemsViewHolder holder, int position) {
             final String mDept = departmentsModelListFiltered.get(position).getmDept();
@@ -294,7 +296,7 @@ public class CoursesFragment extends Fragment {
                 if (isRecordSubmitted()) {
                     if (!isDownloading) {
                         final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                        builder.setMessage("Fetch course data?");
+                        builder.setMessage("Fetch "+ chosenCourse + " data?");
                         builder.setPositiveButton("Yes", (dialog, which) -> {
                             if (!getUsername().equals(NO_DATA)) getCourseData(getUsername());
                             dialog.cancel();
@@ -311,6 +313,16 @@ public class CoursesFragment extends Fragment {
                 } else {
                     Toast.makeText(getContext(), "Please submit record first!", Toast.LENGTH_SHORT).show();
                 }
+            });
+            holder.itemView.setOnLongClickListener(view -> {
+                chosenCourse = holder.myDept.getText().toString();
+                getAllUn_enrolledAttendees();
+                Intent intent = new Intent(getContext(), enrolActivity.class);
+                if (un_enrolledIDs.size()!=0) intent.putExtra("un_enrolledIDs", un_enrolledIDs);
+                if (un_enrolledFPs.size()!=0) intent.putExtra("un_enrolledFPs", un_enrolledFPs);
+                intent.putExtra("chosenCourse", chosenCourse);
+                startActivity(intent);
+                return true;
             });
 
         }
@@ -357,18 +369,16 @@ public class CoursesFragment extends Fragment {
         }
 
     }
-    private String[][] getAllUn_enrolledAttendees(){
-        String[][] temp = new String[attendanceCourses.size()][];
-        int count = 0;
-        for (int j=0; j<attendanceCourses.size(); j++){
-            if (attendanceCourses.get(j).getAdmNo() == null){
-                temp[j][0] = String.valueOf(attendanceCourses.get(j).getId());
-                temp[j][1] = Base64.encodeToString(attendanceCourses.get(j).getFP(),Base64.DEFAULT);
-                count++;
+    private void getAllUn_enrolledAttendees(){
+            un_enrolledIDs.clear();
+            un_enrolledFPs.clear();
+        for (AttendanceCourse course : attendanceCourses) {
+            if (course.getAdmNo() != null && course.getAdmNo().equals("null")){
+                un_enrolledIDs.add(course.getId());
+                un_enrolledFPs.add(course.getFP());
             }
         }
-        if (count>0) return temp;
-        return new String[0][0];
+
     }
     private boolean prepareAttData(){
 
@@ -395,23 +405,36 @@ public class CoursesFragment extends Fragment {
     private boolean isRecordSubmitted() {
         if (attendanceCourses != null) {
             for (AttendanceCourse course : attendanceCourses) {
-                if (course.getCourse().equals(chosenCourse) && course.getSub_Status() == AttendanceCourse.Sub_Status.unsubmitted && course.getCap_status().equals(AttendanceCourse.Cap_Status.captured))
+                if (course.getCourse().equals(chosenCourse) &&
+                        course.getSub_Status() == AttendanceCourse.Sub_Status.unsubmitted &&
+                        course.getCap_status().equals(AttendanceCourse.Cap_Status.captured) &&
+                        !course.getAdmNo().equals("null"))
                     return false;
             }
         }
         return true;
     }
+    public String removeSpace(String course){
+        String[] arr = course.split(" ");
+        StringJoiner joiner = new StringJoiner("_");
+        for (String sub : arr) {
+            joiner.add(sub);
+        }
+        return joiner.toString();
+    }
+
     private void getAtt_EnrolData(Integer position) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setMessage("What would you like to do?");
         //builder.setTitle("Register Entry or Add Fingerprint");
 
         builder.setPositiveButton("Enrol Student", (dialog, which) -> {
-                String[][] un_enrolled = getAllUn_enrolledAttendees();
-                Intent intent = new Intent(getContext(), enrolActivity.class);
-                if (un_enrolled.length!=0) intent.putExtra("Un_enrolled", un_enrolled);
-                intent.putExtra("chosenCourse", chosenCourse);
-                startActivity(intent);
+            getAllUn_enrolledAttendees();
+            Intent intent = new Intent(getContext(), enrolActivity.class);
+            if (un_enrolledIDs.size()!=0) intent.putExtra("un_enrolledIDs", un_enrolledIDs.toArray());
+            if (un_enrolledFPs.size()!=0) intent.putExtra("un_enrolledFPs", un_enrolledFPs.toArray());
+            intent.putExtra("chosenCourse", chosenCourse);
+            startActivity(intent);
         });
 
         builder.setNegativeButton("Take attendance", (dialog, which) -> {
@@ -519,7 +542,7 @@ public class CoursesFragment extends Fragment {
 
                         OutputStream outputStream = httpURLConnection.getOutputStream();
                         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-                        String post_data = URLEncoder.encode("course", "UTF-8") + "=" + URLEncoder.encode(chosenCourse, "UTF-8")
+                        String post_data = URLEncoder.encode("course", "UTF-8") + "=" + URLEncoder.encode(removeSpace(chosenCourse), "UTF-8")
                                 + "&" + URLEncoder.encode("uname", "UTF-8") + "=" + URLEncoder.encode(Username, "UTF-8");
                         bufferedWriter.write(post_data);
                         bufferedWriter.flush();
@@ -595,7 +618,7 @@ public class CoursesFragment extends Fragment {
                     object.getString("adnumber"),
                     Base64.decode(object.getString("Fingerprint_student"), Base64.DEFAULT),
                     AttendanceCourse.Sub_Status.unsubmitted,
-                    AttendanceCourse.Cap_Status.uncaptured , null, 0));
+                    AttendanceCourse.Cap_Status.uncaptured , 0, 0));
 
         }
 
@@ -646,6 +669,6 @@ public class CoursesFragment extends Fragment {
     private int getPeriod() {
         SharedPreferences preferences = getActivity().getSharedPreferences("period file", MODE_PRIVATE);
         int defaultPeriod = 0;
-        return preferences.getInt("Address", defaultPeriod);
+        return preferences.getInt("period", defaultPeriod);
     }
 }

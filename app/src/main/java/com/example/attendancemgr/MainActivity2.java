@@ -15,8 +15,6 @@ import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import androidx.activity.OnBackPressedCallback;
-import androidx.activity.OnBackPressedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -27,11 +25,15 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import androidx.work.WorkManager;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
 
 import com.example.attendancemgr.database.AgentCourse;
 import com.example.attendancemgr.database.AttendanceCourse;
 import com.example.attendancemgr.database.CourseViewModel;
 import com.example.attendancemgr.database.EnrolCourse;
+import com.example.attendancemgr.ui.Faculties.FacultiesFragment;
 import com.google.android.material.navigation.NavigationView;
 
 import org.json.JSONArray;
@@ -45,14 +47,16 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import static com.example.attendancemgr.ui.login.LoginActivity.ID_FILE;
 import static com.example.attendancemgr.ui.login.LoginActivity.USERNAME;
 
-public class MainActivity2 extends AppCompatActivity {
+public class MainActivity2 extends AppCompatActivity implements FacultiesFragment.OnFragmentInteractionListener {
     public static final String  ATT_COURSE = "Course";
     public static final String  ATT_TUTOR_FP = "Authenticate tutor";
     public static final String ATD_TUTOR_FP = "Tutor FPs";
@@ -80,11 +84,11 @@ public class MainActivity2 extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-         toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         headerImageView = findViewById(R.id.imageView);
         drawer = findViewById(R.id.drawer_layout);
-         navigationView = findViewById(R.id.nav_view);
+        navigationView = findViewById(R.id.nav_view);
         mCourseViewModel = new ViewModelProvider(this).get(CourseViewModel.class);
         LiveData<List<AgentCourse>> allCoursesLiveData = mCourseViewModel.getAllAgentCourses();
         LiveData<List<AttendanceCourse>> attLiveData = mCourseViewModel.getAllAttendanceCourses();
@@ -100,10 +104,10 @@ public class MainActivity2 extends AppCompatActivity {
 
 
         Intent loginIntent = getIntent();
-        if (loginIntent.hasExtra("data")){
-            if (loginIntent.getExtras().get("data") != null){
+        if (loginIntent.hasExtra("data")) {
+            if (loginIntent.getExtras().get("data") != null) {
                 Object[] availsObject = (Object[]) loginIntent.getExtras().get("data");
-                for (Object obj:availsObject) {
+                for (Object obj : availsObject) {
                     orgData.add((String[]) obj);
                 }
 
@@ -113,45 +117,19 @@ public class MainActivity2 extends AppCompatActivity {
             }
         }
 
-        enrolLiveData.observe(this, enrolCourses1 ->{
+        enrolLiveData.observe(this, enrolCourses1 -> {
             enrolCourses = enrolCourses1;
             updateBarImage();
         });
 
         attLiveData.observe(this, attendanceCourses1 -> {
-            if (attendanceCourses1!=null){
+            if (attendanceCourses1 != null) {
                 attendanceCourses = attendanceCourses1;
                 updateBarImage();
             }
         });
 
         allCoursesLiveData.observe(this, agentCourses -> allCourses = agentCourses);
-
-        OnBackPressedDispatcher dispatcher = this.getOnBackPressedDispatcher();
-        dispatcher.addCallback(new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (!Submitted){
-                    final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity2.this);
-                    builder.setMessage("Submit record?");
-                    builder.setPositiveButton("Yes", (dialog, which) -> {
-                                if (isWifiCxd()){
-                                    submitRecord();
-                                    dialog.cancel();
-                                }
-                            }
-                    );
-
-                    builder.setNegativeButton("No", (dialog, which) -> dialog.cancel());
-
-                    AlertDialog dialog = builder.create();
-
-                    dialog.show();
-                } else {
-                    finish();
-                }
-            }
-        });
 
     }
 
@@ -169,7 +147,9 @@ public class MainActivity2 extends AppCompatActivity {
         int count = 0;
         if (attendanceCourses != null) {
             for (AttendanceCourse course : attendanceCourses) {
-                if (course.getSub_Status() == AttendanceCourse.Sub_Status.unsubmitted && course.getCap_status().equals(AttendanceCourse.Cap_Status.captured)) count++;
+                if (course.getSub_Status() == AttendanceCourse.Sub_Status.unsubmitted &&
+                        course.getCap_status().equals(AttendanceCourse.Cap_Status.captured) &&
+                        !course.getAdmNo().equals("null")) count++;
             }
         }
         if (enrolCourses != null) {
@@ -290,18 +270,17 @@ public class MainActivity2 extends AppCompatActivity {
         }
         if (enrol_crs.size()==0 && attCount>0) updateBarImage();
     }
+    public String removeSpace(String course){
+        String[] arr = course.split(" ");
+        StringJoiner joiner = new StringJoiner("_");
+        for (String sub : arr) {
+            joiner.add(sub);
+        }
+        return joiner.toString();
+    }
     private JSONArray prepareRecordJsonArray() throws JSONException {
         JSONArray attArray = new JSONArray();
-        for (AttendanceCourse course:attendanceCourses) {
-            if (attendanceCourses.size() == 0){
-                break;
-            }else if(course.getCap_status().equals(AttendanceCourse.Cap_Status.captured)) {
 
-                attArray.put(new JSONObject().put("att_course", course.getCourse())
-                        .put("AdmNo", course.getAdmNo())
-                        .put("date", course.getDate()).put("period", course.getPeriod()));
-            }
-        }
         for (EnrolCourse course:enrolCourses) {
             if (enrolCourses.size() == 0){
                 break;
@@ -322,6 +301,16 @@ public class MainActivity2 extends AppCompatActivity {
             }
 
         }
+        for (AttendanceCourse course:attendanceCourses) {
+            if (attendanceCourses.size() == 0){
+                break;
+            }else if(course.getCap_status().equals(AttendanceCourse.Cap_Status.captured) && course.getAdmNo() != null) {
+
+                attArray.put(new JSONObject().put("att_course", removeSpace(course.getCourse()))
+                        .put("AdmNo", course.getAdmNo())
+                        .put("date", course.getDate()).put("period", course.getPeriod()));
+            }
+        }
         attArray.put(new JSONObject().put("uname", getUsername()));
         attArray.put(new JSONObject().put("code", getCode()));
         return attArray;
@@ -337,7 +326,7 @@ public class MainActivity2 extends AppCompatActivity {
         return preferences.getString(USERNAME, NO_DATA);
     }
     void submitRecord(){
-        class SubmitRecordAsynTask extends AsyncTask<Void, Void, Boolean> {
+         class SubmitRecordAsynTask extends AsyncTask<Void, Void, Boolean> {
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
@@ -364,7 +353,7 @@ public class MainActivity2 extends AppCompatActivity {
                         course.setSub_status(EnrolCourse.Sub_Status.submitted);
                         mCourseViewModel.update(course);
                     }
-
+                    Toast.makeText(MainActivity2.this, "Record successfully submitted!", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(MainActivity2.this, "Error occurred, try again later.", Toast.LENGTH_SHORT).show();
                 }
@@ -388,10 +377,10 @@ public class MainActivity2 extends AppCompatActivity {
                         httpURLConnection.setDoInput(true);
                         httpURLConnection.setDoOutput(true);
                         httpURLConnection.connect();
-
-
+                        JSONArray array = prepareRecordJsonArray();
+                        JSONObject obj = new JSONObject().put("root", array);
                         OutputStream outputStream = httpURLConnection.getOutputStream();
-                        outputStream.write(prepareRecordJsonArray().toString().getBytes(StandardCharsets.UTF_8));
+                        outputStream.write(obj.toString().getBytes(StandardCharsets.UTF_8));
 
                         InputStream inputStream = httpURLConnection.getInputStream();
                         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, "iso-8859-1"));
@@ -419,8 +408,59 @@ public class MainActivity2 extends AppCompatActivity {
             }
         }
 
-        SubmitRecordAsynTask submit = new SubmitRecordAsynTask();
+        SubmitRecordAsynTask submit;
+        submit = new SubmitRecordAsynTask();
         submit.execute();
 
+    }
+
+    @Override
+    public void onBackPressed(boolean backPressed) {
+        if (backPressed){
+            if (!Submitted){
+                final AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity2.this);
+                builder.setMessage("Submit record?");
+                builder.setPositiveButton("Yes", (dialog, which) -> {
+                            if (isWifiCxd()){
+                                submitRecord();
+                                dialog.cancel();
+                            }
+                        }
+                );
+
+                builder.setNegativeButton("No", (dialog, which) -> {
+                    dialog.cancel();
+                    finish();
+                });
+
+                AlertDialog dialog = builder.create();
+
+                dialog.show();
+            } else {
+                finish();
+            }
+        }
+    }
+
+    private void deleteCourses(){
+        WorkManager manager = WorkManager.getInstance(getApplicationContext());
+
+    }
+
+    public class DeleteCoursesWorker extends Worker{
+        Calendar cal = Calendar.getInstance();
+
+        public DeleteCoursesWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+            super(context, workerParams);
+        }
+
+        @NonNull
+        @Override
+        public Result doWork() {
+            if (cal.get(Calendar.DAY_OF_WEEK)==Calendar.MONDAY) {
+                mCourseViewModel.deleteAllAgentCourses();
+            }
+            return Result.success();
+        }
     }
 }
