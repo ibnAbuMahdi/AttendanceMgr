@@ -290,7 +290,7 @@ public class MainActivity2 extends AppCompatActivity implements FacultiesFragmen
                     attArray.put(new JSONObject().put("enrol_course", new JSONArray(course.getCourse()))
                             .put("AdmNo", course.getAdmNo())
                             .put("fp", Base64.encodeToString(course.getFP(), Base64.DEFAULT))
-                            .put("IDImg", Base64.encodeToString(course.getIDImg(), Base64.DEFAULT))
+                            .put("IDImg", "")
                     );
                 } else {
                     //for added courses
@@ -312,14 +312,9 @@ public class MainActivity2 extends AppCompatActivity implements FacultiesFragmen
             }
         }
         attArray.put(new JSONObject().put("uname", getUsername()));
-        attArray.put(new JSONObject().put("code", getCode()));
         return attArray;
     }
 
-    private String getCode() {
-            SharedPreferences preferences = this.getSharedPreferences("code file", MODE_PRIVATE);
-            return preferences.getString("code", NO_DATA);
-    }
 
     private String getUsername(){
         SharedPreferences preferences = this.getSharedPreferences(ID_FILE, MODE_PRIVATE);

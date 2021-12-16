@@ -622,10 +622,6 @@ public class CoursesFragment extends Fragment {
 
         }
 
-        JSONArray codeArray = jsonArray.getJSONArray(2);
-        JSONObject obj = codeArray.getJSONObject(0);
-        String code = obj.getString("code");
-        storeCode(code);
 
         SharedPreferences sharedPref = getActivity().getSharedPreferences("Tutors", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -638,13 +634,6 @@ public class CoursesFragment extends Fragment {
         SharedPreferences sharedPref = getActivity().getSharedPreferences("pass code file", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putString("passcode", passcode);
-        editor.apply();
-    }
-
-    private void storeCode(String code) {
-        SharedPreferences sharedPref = getActivity().getSharedPreferences("code file", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putString("code", code);
         editor.apply();
     }
 

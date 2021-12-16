@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static com.example.attendancemgr.MainActivity2.NO_DATA;
+
 public class enrolActivity extends AppCompatActivity {
 private static String chosenCourse, admNo, receivedCourse,  MODE;
 EditText admNoView;
@@ -65,6 +67,7 @@ private List<String> coursesList;
 
     private final ActivityResultCallback<ActivityResult> scanCallback = result -> {
         if (result.getResultCode() == Activity.RESULT_OK) {
+            storeSpinnerData((String) facultySpinner.getSelectedItem(), (String) deptSpinner.getSelectedItem());
             MODE = NEW;
             mToolbar.setSubtitle("New Enrollment");
             selectedCourses.setText("");
@@ -216,6 +219,11 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
 
             }
         });
+            String[] spinnerData = getSpinnerData();
+            if (!spinnerData[1].equals(NO_DATA)){
+                facultySpinner.setSelection(facSpinnerAdapter.getPosition(spinnerData[0]));
+                deptSpinner.setSelection(deptSpinnerAdapter.getPosition(spinnerData[1]));
+            }
 
         allCoursesLiveData.observe(this, agentCourses -> {
             allCourses = agentCourses;
@@ -238,7 +246,7 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
 
                     if (admNoView.getText().length() != 0 && selectedCourses.getText().length() != 0 /*&& !pb_is_Visible*/) {
                         admNo = admNoView.getText().toString();
-                        snapLauncher.launch(null);
+                        launchFPScan();
                     } else {
                         Toast.makeText(this, "Admission number or courses field empty!", Toast.LENGTH_SHORT).show();
                     }
@@ -266,7 +274,7 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
         switch (menuItem.getTitle().toString()){
             case "New":
                 mToolbar.setSubtitle("New Enrollment");
-                snapButton.setText(R.string.capture_id);
+                snapButton.setText(R.string.scan_finger);
                 MODE = NEW;
                 break;
             case "Add":
@@ -329,14 +337,14 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
                        admNo,
                        (byte[]) resultObj[0],
                        EnrolCourse.Sub_Status.unsubmitted,
-                       IDCardbytes));
+                       null));
 
            } else {
                mCourseViewModel.insert(new EnrolCourse(Arrays.toString(removeSpace(coursesList).toArray()),
                        admNo,
                        (byte[]) resultObj[0],
                        EnrolCourse.Sub_Status.unsubmitted,
-                       IDCardbytes));
+                       null));
 
 
                if (receivedCourse != null) {
@@ -414,5 +422,19 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
         selectedCourses.setText("");
         coursesList = new LinkedList<>();
         Toast.makeText(this, "Course(s) added successfully", Toast.LENGTH_SHORT).show();
+    }
+
+    private void storeSpinnerData(String faculty, String dept){
+        SharedPreferences sharedPref = getSharedPreferences(MainActivity2.JOBS_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("Faculty", faculty);
+        editor.putString("Dept.", dept);
+        editor.apply();
+    }
+
+    private String[] getSpinnerData(){
+        SharedPreferences preferences = this.getSharedPreferences(MainActivity2.JOBS_FILE, MODE_PRIVATE);
+        String defaultData = NO_DATA;
+        return new String[]{preferences.getString("Faculty", defaultData), preferences.getString("Dept.", defaultData)};
     }
 }
