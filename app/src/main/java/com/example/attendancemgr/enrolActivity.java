@@ -61,6 +61,7 @@ private ArrayAdapter<String> deptSpinnerAdapter, coursesAdapter;
 private final String ADD = "Add courses";
 private final String NEW = "new enrollment";
 private Toolbar mToolbar;
+private String selectedDept = NO_DATA;
 private byte[] IDCardbytes;
 private List<String> coursesList;
 
@@ -165,6 +166,10 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
                         deptSpinnerAdapter.add("Select Department");
                         deptSpinnerAdapter.addAll(deptsSet);
                         deptSpinnerAdapter.notifyDataSetChanged();
+                        int position = deptSpinnerAdapter.getPosition(selectedDept);
+                        if (!selectedDept.equals(NO_DATA) && position > 0) {
+                            deptSpinner.setSelection(position);
+                        }
 
                     }
 
@@ -219,11 +224,7 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
 
             }
         });
-            String[] spinnerData = getSpinnerData();
-            if (!spinnerData[1].equals(NO_DATA)){
-                facultySpinner.setSelection(facSpinnerAdapter.getPosition(spinnerData[0]));
-                deptSpinner.setSelection(deptSpinnerAdapter.getPosition(spinnerData[1]));
-            }
+
 
         allCoursesLiveData.observe(this, agentCourses -> {
             allCourses = agentCourses;
@@ -265,7 +266,11 @@ ActivityResultLauncher<Void> snapLauncher = registerForActivityResult(new Activi
             if (!statusView.getText().toString().isEmpty()) {statusView.setText(""); return true;}
             return false;
         });*/
-
+        String[] spinnerData = getSpinnerData();
+        if (!spinnerData[1].equals(NO_DATA)){
+            facultySpinner.setSelection(facSpinnerAdapter.getPosition(spinnerData[0]));
+            selectedDept = spinnerData[0];
+        }
         mToolbar.setOnMenuItemClickListener(onMenuItemClick);
 
     }
